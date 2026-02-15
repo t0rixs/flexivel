@@ -5,10 +5,16 @@ import '../models/models.dart';
 /// Plan の予定一覧をタイムライン表示するウィジェット
 /// 現在時刻に応じて滞中項目（青縁）・移動中（線上の円＋表示）を表示
 class PlanTimeline extends StatefulWidget {
-  const PlanTimeline({super.key, required this.plan, this.highlightItemId});
+  const PlanTimeline({
+    super.key,
+    required this.plan,
+    this.highlightItemId,
+    this.debugNow,
+  });
 
   final Plan plan;
   final String? highlightItemId;
+  final DateTime? debugNow; // デバッグ用時刻オーバーライド
 
   @override
   State<PlanTimeline> createState() => _PlanTimelineState();
@@ -21,10 +27,19 @@ class _PlanTimelineState extends State<PlanTimeline> {
   @override
   void initState() {
     super.initState();
-    _now = DateTime.now();
+    _now = widget.debugNow ?? DateTime.now();
     _timer = Timer.periodic(const Duration(minutes: 1), (_) {
-      if (mounted) setState(() => _now = DateTime.now());
+      if (mounted) setState(() => _now = widget.debugNow ?? DateTime.now());
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant PlanTimeline oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // debugNow が変更されたら即反映
+    if (widget.debugNow != oldWidget.debugNow) {
+      _now = widget.debugNow ?? DateTime.now();
+    }
   }
 
   @override
@@ -392,11 +407,11 @@ class _TimelineConnector extends StatelessWidget {
 
     if (!isInTransit) {
       return Padding(
-        padding: const EdgeInsets.only(left: 42),
-        child: Container(
+        padding: const EdgeInsets.only(left: 42, right: 335),
+        child: SizedBox(
           width: 2,
           height: 24,
-          color: lineColor,
+          child: ColoredBox(color: lineColor),
         ),
       );
     }

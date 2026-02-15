@@ -55,19 +55,80 @@ class TripState extends ChangeNotifier {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
-  // ── 15分タイマー ──
+  // ── デバッグ用オーバーライド（時刻・位置） ──
+  DateTime? _debugNow;
+  DateTime? get debugNow => _debugNow;
+  double? _debugLat;
+  double? _debugLng;
+  double? get debugLat => _debugLat;
+  double? get debugLng => _debugLng;
+  bool get hasDebugLocation => _debugLat != null && _debugLng != null;
+
+  /// デバッグ用: 現在時刻を上書き
+  void setDebugTime(DateTime time) {
+    _debugNow = time;
+    debugPrint('[DEBUG] 時刻を ${time.toIso8601String()} に設定');
+    notifyListeners();
+  }
+
+  /// デバッグ用: 現在地を上書き
+  void setDebugLocation(double lat, double lng) {
+    _debugLat = lat;
+    _debugLng = lng;
+    debugPrint('[DEBUG] 位置を ($lat, $lng) に設定');
+    notifyListeners();
+  }
+
+  /// デバッグ位置をクリアして実位置に戻す
+  void clearDebugLocation() {
+    _debugLat = null;
+    _debugLng = null;
+    notifyListeners();
+  }
+
+  /// デバッグ設定をすべてクリアして実時刻・実位置に戻す
+  void clearDebugOverrides() {
+    _debugNow = null;
+    _debugLat = null;
+    _debugLng = null;
+    notifyListeners();
+  }
+
+  /// デバッグ用: 強制チェック実行（クールダウン無視）
+  Future<void> debugPerformCheck() async {
+    _applyCooldownUntil = null;
+    await performCheck(force: true);
+  }
+
+  /// アプリ内で使う「現在時刻」（デバッグ時刻があればそれを使う）
+  DateTime get effectiveNow => _debugNow ?? DateTime.now();
+
+  // ── 15分タイマー / 出発時刻 ──
   Timer? _checkTimer;
+  Timer? _departureTimer; // 出発時刻まで待つタイマー
   static const _checkInterval = Duration(minutes: 15);
+  DateTime? _departureTime;
+  DateTime? get departureTime => _departureTime;
+
+  /// 出発時刻を設定。未来なら出発時刻に定期チェックを開始、過去なら即開始。
+  void setDepartureTime(DateTime time) {
+    _departureTime = time;
+    notifyListeners();
+  }
 
   // ── Firestore リアルタイム同期 ──
   StreamSubscription<Plan?>? _planSubscription;
   StreamSubscription<LastBroken?>? _lastBrokenSubscription;
   String? _lastProcessedBrokenCreatedAt; // 処理済み lastBroken の createdAt（重複防止）
+  DateTime? _initTime; // アプリ起動時刻（古い lastBroken を無視するため）
+  DateTime? _applyCooldownUntil; // applyChoice 後のクールダウン（再破綻ループ防止）
 
   // ────────────────────────────────────────────
   // 起動時: Firestore から plan を読み込み + リアルタイム同期
   // ────────────────────────────────────────────
   Future<void> initialize() async {
+    _initTime = DateTime.now();
+
     // 1回取得（高速表示用）
     _plan = await _firestore.fetchPlan(userId);
     notifyListeners();
@@ -79,12 +140,28 @@ class TripState extends ChangeNotifier {
     });
 
     // lastBroken 監視（破綻通知: enrichPlan 後の check や /check で保存されたものを即時表示）
-    // 同じ createdAt の lastBroken は1度だけ処理する（Firestore 再接続時の重複防止）
+    // ・同じ createdAt の lastBroken は1度だけ処理する（Firestore 再接続時の重複防止）
+    // ・アプリ起動前の古い lastBroken は無視する
+    // ・applyChoice 後のクールダウン中は無視する
     _lastBrokenSubscription =
         _firestore.lastBrokenStream(userId).listen((lastBroken) {
       if (lastBroken != null && hasPlan) {
+        // 処理済み → スキップ
         if (_lastProcessedBrokenCreatedAt == lastBroken.createdAt) {
-          return; // 処理済み → スキップ
+          return;
+        }
+        // アプリ起動前の古い lastBroken → 無視
+        final brokenTime = DateTime.tryParse(lastBroken.createdAt);
+        if (brokenTime != null && _initTime != null && brokenTime.isBefore(_initTime!)) {
+          debugPrint('[破綻通知] 古い lastBroken を無視: ${lastBroken.createdAt}');
+          _lastProcessedBrokenCreatedAt = lastBroken.createdAt;
+          return;
+        }
+        // applyChoice 後のクールダウン中 → 無視
+        if (_applyCooldownUntil != null && DateTime.now().isBefore(_applyCooldownUntil!)) {
+          debugPrint('[破綻通知] クールダウン中のため無視');
+          _lastProcessedBrokenCreatedAt = lastBroken.createdAt;
+          return;
         }
         debugPrint(
             '[破綻通知] Firestore lastBroken 受信: targetItemId=${lastBroken.targetItemId}');
@@ -110,7 +187,22 @@ class TripState extends ChangeNotifier {
   // §5.1: 定期チェック開始 / 停止
   // ────────────────────────────────────────────
   void startPeriodicCheck() {
-    // 即座に1回実行 + 15分おき
+    _departureTimer?.cancel();
+
+    if (_departureTime != null && _departureTime!.isAfter(DateTime.now())) {
+      // 出発時刻が未来 → その時刻まで待ってから開始
+      final delay = _departureTime!.difference(DateTime.now());
+      debugPrint('[check] 出発時刻まで ${delay.inMinutes}分待機');
+      _departureTimer = Timer(delay, () {
+        _startCheckLoop();
+      });
+    } else {
+      // 出発時刻が過去 or 未設定 → 即開始
+      _startCheckLoop();
+    }
+  }
+
+  void _startCheckLoop() {
     performCheck();
     _checkTimer?.cancel();
     _checkTimer = Timer.periodic(_checkInterval, (_) => performCheck());
@@ -119,26 +211,42 @@ class TripState extends ChangeNotifier {
   void stopPeriodicCheck() {
     _checkTimer?.cancel();
     _checkTimer = null;
+    _departureTimer?.cancel();
+    _departureTimer = null;
   }
 
   // ────────────────────────────────────────────
   // §5.1: /check を呼び status に応じて分岐
   // ────────────────────────────────────────────
-  Future<void> performCheck() async {
+  Future<void> performCheck({bool force = false}) async {
+    // applyChoice 後のクールダウン中はチェックしない（force=true で強制実行）
+    if (!force && _applyCooldownUntil != null && DateTime.now().isBefore(_applyCooldownUntil!)) {
+      debugPrint('[check] クールダウン中のためスキップ');
+      return;
+    }
     try {
       _status = TripStatus.loading;
       notifyListeners();
 
-      final position = await _location.getCurrentPosition();
-      final now = DateTime.now().toIso8601String();
+      final double lat;
+      final double lng;
+      if (hasDebugLocation) {
+        lat = _debugLat!;
+        lng = _debugLng!;
+      } else {
+        final position = await _location.getCurrentPosition();
+        lat = position.latitude;
+        lng = position.longitude;
+      }
+      final now = effectiveNow.toIso8601String();
 
       final response = await _api.check(
         CheckRequest(
           userId: userId,
           context: CheckRequestContext(
             now: now,
-            currentLat: position.latitude,
-            currentLng: position.longitude,
+            currentLat: lat,
+            currentLng: lng,
           ),
         ),
       );
@@ -205,11 +313,14 @@ class TripState extends ChangeNotifier {
         _plan = response.updatedPlan;
       }
 
-      // broken 状態をクリアして次のチェックへ
+      // broken 状態をクリア + 定期チェック停止（再破綻ループ防止）
       _status = TripStatus.idle;
       _brokenTargetItemId = null;
       _brokenOptions = null;
       _errorMessage = null;
+      // 60秒間クールダウン: この間は新しい broken を無視
+      _applyCooldownUntil = DateTime.now().add(const Duration(seconds: 60));
+      stopPeriodicCheck();
     } catch (e) {
       _errorMessage = e.toString();
       _status = TripStatus.broken;
@@ -273,6 +384,7 @@ class TripState extends ChangeNotifier {
   @override
   void dispose() {
     stopPeriodicCheck();
+    _departureTimer?.cancel();
     _planSubscription?.cancel();
     _lastBrokenSubscription?.cancel();
     super.dispose();

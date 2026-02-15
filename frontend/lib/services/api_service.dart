@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/models.dart';
 
@@ -31,6 +32,11 @@ class ApiService {
   static String _defaultBaseUrl() {
     const envUrl = String.fromEnvironment('API_BASE_URL');
     if (envUrl.isNotEmpty) return envUrl;
+    // デバッグモード → localhost、リリース → Cloud Run
+    if (kDebugMode) {
+      if (Platform.isAndroid) return 'http://10.0.2.2:3000';
+      return 'http://localhost:3000';
+    }
     return 'https://flexivel-backend-186244424243.asia-northeast1.run.app';
   }
 

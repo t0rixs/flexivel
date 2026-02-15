@@ -8,10 +8,12 @@ class BrokenModal extends StatelessWidget {
     super.key,
     required this.options,
     required this.onChoice,
+    this.targetItemName,
   });
 
   final List<BrokenOption> options;
   final void Function(ApplyOptionChoice choice) onChoice;
+  final String? targetItemName; // 破綻した予定の名前
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +58,35 @@ class BrokenModal extends StatelessWidget {
               ],
             ),
           ),
+          if (targetItemName != null) ...[
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.place, size: 18, color: theme.colorScheme.error),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        targetItemName!,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onErrorContainer,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
