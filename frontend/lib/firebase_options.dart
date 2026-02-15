@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -65,4 +62,16 @@ class DefaultFirebaseOptions {
     storageBucket: 'flexivel.firebasestorage.app',
     iosBundleId: 'com.example.flexivel',
   );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyAWP1UBwSA_DNuk5sTkZRPULglDO1WcNIU',
+    appId: '1:186244424243:web:96fd921783ff98f1e8f946',
+    messagingSenderId: '186244424243',
+    projectId: 'flexivel',
+    authDomain: 'flexivel.firebaseapp.com',
+    databaseURL: 'https://flexivel-default-rtdb.asia-southeast1.firebasedatabase.app',
+    storageBucket: 'flexivel.firebasestorage.app',
+    measurementId: 'G-C83NWWWZ5X',
+  );
+
 }
