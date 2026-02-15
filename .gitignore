@@ -1,65 +1,47 @@
+# ── バックエンド（フロントのみデプロイのため除外） ──
+backend/
 
-# compiled output
-/dist
-/node_modules
-/build
+# ── サービスアカウント・秘密鍵 ──
+*service-account*.json
+*.p12
+*.pem
 
-# Logs
-logs
-*.log
-npm-debug.log*
-pnpm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
-
-# OS
-.DS_Store
-
-# Tests
-/coverage
-/.nyc_output
-
-# IDEs and editors
-/.idea
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
-
-# IDE - VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-# dotenv environment variable files
+# ── 環境変数 ──
 .env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
+.env.*
 
-# temp directory
-.temp
-.tmp
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Diagnostic reports (https://nodejs.org/api/report.html)
-report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
-frontend/build/
+# ── Flutter / Dart ──
 frontend/.dart_tool/
 frontend/build/
-frontend/.dart_tool/
-frontend/build/
-frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.packages
+frontend/pubspec.lock
+
+# ── ビルド成果物 ──
 **/libflutter.so
 **/*.apk
+**/*.aab
+**/*.ipa
+
+# ── OS ──
+.DS_Store
+Thumbs.db
+
+# ── IDE ──
+.idea/
+.vscode/
+*.sublime-workspace
+*.iml
+
+# ── Makefile（ローカル開発用） ──
+Makefile
+
+# ── その他 ──
+*.log
+.temp/
+.tmp/
+
+# ── Docker（バックエンド用） ──
+Dockerfile
+.dockerignore

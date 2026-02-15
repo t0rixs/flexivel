@@ -1,98 +1,75 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Flexivel
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+旅程が破綻したとき、代替プランを提案するモバイルアプリです。
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 概要
 
-## Description
+- 旅行の予定（場所・開始時刻・終了時刻）を登録
+- 15分ごとに現在地と時刻から、次の予定に間に合うかを自動チェック
+- 破綻が検出されると、代替プラン（次の予定へ直行 / 寄り道先 / スキップ）を提案
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 技術スタック
 
-## Project setup
+| レイヤー | 技術 |
+|---------|------|
+| フロントエンド | Flutter (Dart) |
+| バックエンド | NestJS (TypeScript) — Cloud Run でホスティング済み |
+| データベース | Cloud Firestore |
+| 外部 API | Google Places API, Google Routes API, Gemini API |
 
-```bash
-$ npm install
-```
+## セットアップ
 
-## Compile and run the project
+### 前提条件
+
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) (3.x 以上)
+- iOS: Xcode + CocoaPods
+- Android: Android Studio + Android SDK
+
+### インストール
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+git clone https://github.com/t0rixs/flexivel.git
+cd flexivel/frontend
+flutter pub get
 ```
 
-## Run tests
+### 起動
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+cd frontend
+flutter run
 ```
 
-## Deployment
+> バックエンド API は Cloud Run 上にデプロイ済みのため、ローカルでのバックエンド起動は不要です。
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### カスタム API サーバーの指定（任意）
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+ローカルでバックエンドを動かす場合は、環境変数で API URL を上書きできます:
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+flutter run --dart-define=API_BASE_URL=http://localhost:3000
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## プロジェクト構成
 
-## Resources
+```
+frontend/
+├── lib/
+│   ├── main.dart              # エントリーポイント
+│   ├── models/                # データモデル
+│   ├── screens/               # 画面 (旅程画面, 予定作成画面)
+│   ├── services/              # API通信, Firestore, 位置情報
+│   ├── state/                 # 状態管理 (TripState)
+│   └── widgets/               # 共通ウィジェット (タイムライン, モーダル等)
+├── android/                   # Android 固有設定
+├── ios/                       # iOS 固有設定
+└── pubspec.yaml               # 依存関係
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+## デバッグモード
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Flutter のデバッグモード (`kDebugMode`) で以下の機能が有効になります:
 
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- 現在時刻の手動オーバーライド
+- 現在地の手動オーバーライド
+- 破綻チェックの手動実行ボタン
