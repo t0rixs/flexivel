@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "186244424243",
+    "project_id": "flexivel",
+    "storage_bucket": "flexivel.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:186244424243:android:76649403eae6bbd2e8f946",
+        "android_client_info": {
+          "package_name": "com.example.flexivel"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDz97Scj8D0IQCc3M8B-QLk9ivfhEBnDq4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
