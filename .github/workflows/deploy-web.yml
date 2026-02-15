@@ -34,7 +34,7 @@ jobs:
 
       - name: Build web
         working-directory: frontend
-        run: flutter build web --release --base-href "/flexivel/"
+        run: flutter build web --release --base-href "/flexivel/" --dart-define=SHOW_DEBUG=true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

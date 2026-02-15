@@ -6,6 +6,12 @@ import '../widgets/warn_banner.dart';
 import '../widgets/broken_modal.dart';
 import 'plan_input_screen.dart';
 
+/// デバッグパネルを表示するか
+/// flutter run（debug）では kDebugMode=true で自動表示
+/// リリースビルドでは --dart-define=SHOW_DEBUG=true で有効化
+const _showDebugPanel =
+    kDebugMode || bool.fromEnvironment('SHOW_DEBUG', defaultValue: false);
+
 /// 仕様書_API仕様 §5: メイン画面（Plan表示 + warn/broken 対応）
 class TripScreen extends StatefulWidget {
   const TripScreen({super.key, required this.tripState});
@@ -188,7 +194,7 @@ class _TripScreenState extends State<TripScreen> {
       body: Column(
         children: [
           // ── デバッグパネル ──
-          if (kDebugMode && _state.hasPlan)
+          if (_showDebugPanel && _state.hasPlan)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
